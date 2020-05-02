@@ -1,0 +1,16 @@
+pathcueflacsource=/someflacsource/somesubfolder
+pathflacdest=/someflacdest/somesubfolder
+pathexclus-1=someexclusion1/
+pathexclus-2=someexclusion2/
+coverlist=front.jpg;cover.jpg;folder.jpg;cover1.jpeg
+coverfolderlist=cover;covers
+filethumbnail=Folder.jpg
+waittime=5
+valcpulimit=95
+flaccomplevel=8
+tmpsmbpattern-1=<>\\|:
+tmpsmbreplace-1=-
+tmpsmbpattern-2=?
+tmpsmbreplace-2=¿
+tmpsmbpattern-3=*
+tmpsmbreplace-3=+
