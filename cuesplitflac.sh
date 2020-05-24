@@ -6,6 +6,7 @@
 # This script searches recursively directories and splits .flac or .ape files in separate tracks based on the information provided in the .cue files
 #
 # Version 1.0 "Does the job"
+# Version 1.1 grep text comparison, echo cleanup
 #
 # Prerequisites: 
 # flac
@@ -43,19 +44,19 @@ switchhelp="true"
 
 # variables
 # variables are read from init.txt
-pathcueflacsource=$(echo $(grep -m 1 "pathcueflacsource=" $pathinit) | awk -F'=' '{print $2}')
-pathflacdest=$(echo $(grep -m 1 "pathflacdest=" $pathinit) | awk -F'=' '{print $2}')
-valcpulimit=$(echo $(grep -m 1 "valcpulimit=" $pathinit) | awk -F'=' '{print $2}')
-coverlist="tmp-front.jpg;$(echo $(grep -m 1 "coverlist=" $pathinit) | awk -F'=' '{print $2}')"
-coverfolderlist=$(echo $(grep -m 1 "coverfolderlist=" $pathinit) | awk -F'=' '{print $2}')
-filethumbnail=$(echo $(grep -m 1 "filethumbnail=" $pathinit) | awk -F'=' '{print $2}') ; if [ -z "$filethumbnail" ] ; then filethumbnail="Folder.jpg" ; fi
-waittime=$(echo $(grep -m 1 "waittime=" $pathinit) | awk -F'=' '{print $2}'); if [ -z "$waittime" ] ; then waittime=5 ; fi
+pathcueflacsource=$(grep -m 1 "pathcueflacsource=" $pathinit | awk -F'=' '{print $2}')
+pathflacdest=$(grep -m 1 "pathflacdest=" $pathinit | awk -F'=' '{print $2}')
+valcpulimit=$(grep -m 1 "valcpulimit=" $pathinit | awk -F'=' '{print $2}')
+coverlist="tmp-front.jpg;$(grep -m 1 "coverlist=" $pathinit | awk -F'=' '{print $2}')"
+coverfolderlist=$(grep -m 1 "coverfolderlist=" $pathinit | awk -F'=' '{print $2}')
+filethumbnail=$(grep -m 1 "filethumbnail=" $pathinit | awk -F'=' '{print $2}') ; if [ -z "$filethumbnail" ] ; then filethumbnail="Folder.jpg" ; fi
+waittime=$(grep -m 1 "waittime=" $pathinit | awk -F'=' '{print $2}'); if [ -z "$waittime" ] ; then waittime=5 ; fi
 pathbase="$pathsource/db/base.txt"
 pathbasenoprocess="$pathsource/db/basenoprocess.txt"
 pathlog="$pathsource/log"
 filelog="$pathlog/cuesplitflac.txt"
 pathtmp="$pathsource/tmp"
-flaccomplevel=$(echo $(grep -m 1 "flaccomplevel=" $pathinit) | awk -F'=' '{print $2}') ; if [ -z "$flaccomplevel" ] ; then flaccomplevel=8 ; elif [ $flaccomplevel -gt 8 ] ; then flaccomplevel=8 ;fi
+flaccomplevel=$(grep -m 1 "flaccomplevel=" $pathinit | awk -F'=' '{print $2}') ; if [ -z "$flaccomplevel" ] ; then flaccomplevel=8 ; elif [ $flaccomplevel -gt 8 ] ; then flaccomplevel=8 ;fi
 # note : pathexclus-X is read later in the script
 # note : smbpattern-X is read later in the script
 
@@ -132,8 +133,8 @@ smbcompatibility(){
 		writelog "smb compatibility conversion input : $fs"
 		for i in {1..6} ; do
 			
-			local tmpsmbpattern=$(echo $(grep -m 1 "smbpattern-$i=" $pathinit) | awk -F'=' '{print $2}')
-			local tmpsmbreplace=$(echo $(grep -m 1 "smbreplace-$i=" $pathinit) | awk -F'=' '{print $2}')
+			local tmpsmbpattern=$(grep -m 1 "smbpattern-$i=" $pathinit | awk -F'=' '{print $2}')
+			local tmpsmbreplace=$(grep -m 1 "smbreplace-$i=" $pathinit | awk -F'=' '{print $2}')
 			if [ -n "$tmpsmbpattern" ] && [ -n "$tmpsmbreplace" ] ; then
 				tmpsmbpattern="[$tmpsmbpattern]"
 				tmpbasename="${tmpbasename//$tmpsmbpattern/$tmpsmbreplace}"
@@ -485,6 +486,7 @@ checkprereq()
 	if [ ! -f "$varfile" ] ; then echo "program \"file\" missing" ; go=0 ; fi
 	if [ ! -f "$varmac" ] ; then echo "Monkey's audio missing" ; go=0 ; fi
 	if [ ! -f "$cpulimitpid" ] ; then echo "cpulimit script missing" ; go=0 ; fi
+	if [ ! -f "$variconv" ] ; then echo "iconv  missing" ; go=0 ; fi
 		
 	#testing directories
 	if [ ! -d "$pathcueflacsource" ]; then echo "pathcueflacsource missing" ; go=0; fi
@@ -646,7 +648,7 @@ processingcore(){
 						fi						
 					fi
 					
-					if [ -n "$(echo $(grep -m 1 "smbpattern-1=" $pathinit) | awk -F'=' '{print $2}')" ] && [ -n "$$(echo $(grep -m 1 "smbreplace-1=" $pathinit) | awk -F'=' '{print $2}')" ] ; then	
+					if [ -n "$(grep -m 1 "smbpattern-1=" $pathinit | awk -F'=' '{print $2}')" ] && [ -n "$(grep -m 1 "smbreplace-1=" $pathinit | awk -F'=' '{print $2}')" ] ; then	
 						smbcompatibility "$pathflacdest$shortpathanddirl"
 					fi
 			
@@ -714,10 +716,10 @@ fileprocessing()
 		writelog "database copy"
 		cp -f "$pathbase" "$pathtmp/tmpbase.txt"
 		writelog "empty lines removal"
-		grep . "$pathtmp/tmpbase.txt" > "$pathtmp/tmpbase-2.txt"
+		grep -a . "$pathtmp/tmpbase.txt" > "$pathtmp/tmpbase-2.txt"
 
 		writelog "differencies spotting"
-		grep -Fvf "$pathtmp/tmpbase-2.txt" "$pathtmp/listlocalcue-2.txt" > "$pathtmp/diff.txt"
+		grep -aFvf "$pathtmp/tmpbase-2.txt" "$pathtmp/listlocalcue-2.txt" > "$pathtmp/diff.txt"
 	else
 		writelog "no database found, every file is processed"
 		cp "$pathtmp/listlocalcue-2.txt" "$pathtmp/diff.txt"
@@ -728,10 +730,10 @@ fileprocessing()
 	#removes exclusions from the loop
 	#note: increase array size for more exclusion
 	for i in {1..10} ; do
-		el=$(echo $(grep -m 1 "pathexclus-$i=" $pathinit) | awk -F'=' '{print $2}')
+		el=$(grep -m 1 "pathexclus-$i=" $pathinit | awk -F'=' '{print $2}')
 		if [ -n "$el" ]; then
 			writelog "exclusion : $el"
-			grep -Ev "^$el" "$pathtmp/diff.txt" > "$pathtmp/diff-2.txt"
+			grep -aEv "^$el" "$pathtmp/diff.txt" > "$pathtmp/diff-2.txt"
 			cat "$pathtmp/diff-2.txt" > "$pathtmp/diff.txt"
 		fi
 	done
